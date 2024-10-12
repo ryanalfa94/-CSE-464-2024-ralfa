@@ -41,7 +41,7 @@ import java.io.IOException;
         public void outputGraphAsPng(String filepath) throws IOException {
             if (graph != null) {
                 Graphviz.fromGraph(graph).width(500).render(Format.PNG).toFile(new File(filepath));
-                System.out.println("Graph image saved to " + filepath);
+                System.out.println("Graph image saved to  " + filepath);
             } else {
                 System.out.println("Graph is not initialized.");
             }
