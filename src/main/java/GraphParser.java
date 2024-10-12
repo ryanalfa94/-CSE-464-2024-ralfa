@@ -1,4 +1,3 @@
-
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
@@ -38,6 +37,16 @@ import java.io.IOException;
             }
         }
 
+        // Save the graph to a PNG file
+        public void outputGraphAsPng(String filepath) throws IOException {
+            if (graph != null) {
+                Graphviz.fromGraph(graph).width(500).render(Format.PNG).toFile(new File(filepath));
+                System.out.println("Graph image saved to " + filepath);
+            } else {
+                System.out.println("Graph is not initialized.");
+            }
+        }
+
         public static void main(String[] args) {
             GraphParser parser = new GraphParser();
             try {
@@ -46,6 +55,7 @@ import java.io.IOException;
                 parser.printGraphDetails();
                 // Replace with your actual output path
                 parser.outputGraph("src/main/resources/output.dot");
+                parser.outputGraphAsPng("src/main/resources/output.png");
             } catch (IOException e) {
                 e.printStackTrace();
             }
