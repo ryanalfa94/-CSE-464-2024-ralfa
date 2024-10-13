@@ -1,9 +1,9 @@
+import guru.nidi.graphviz.model.Factory;
+import guru.nidi.graphviz.model.MutableNode;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.parse.Parser;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.Factory;
-import guru.nidi.graphviz.model.MutableGraph;
-import guru.nidi.graphviz.model.MutableNode;
-import guru.nidi.graphviz.parse.Parser;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +15,13 @@ public class GraphParser {
     // Custom exception for duplicate nodes
     public static class DuplicateNodeException extends Exception {
         public DuplicateNodeException(String message) {
+            super(message);
+        }
+    }
+
+    // Custom exception for duplicate edges
+    public static class DuplicateEdgeException extends Exception {
+        public DuplicateEdgeException(String message) {
             super(message);
         }
     }
@@ -68,6 +75,44 @@ public class GraphParser {
         }
     }
 
+    // Feature 3: Add an edge and check for duplicates
+    public void addEdge(String srcLabel, String dstLabel) throws DuplicateEdgeException {
+        if (graph != null) {
+            MutableNode srcNode = null;
+            MutableNode dstNode = null;
+
+            // Find source and destination nodes
+            for (MutableNode node : graph.nodes()) {
+                if (node.name().toString().equals(srcLabel)) {
+                    srcNode = node;
+                }
+                if (node.name().toString().equals(dstLabel)) {
+                    dstNode = node;
+                }
+            }
+
+            if (srcNode == null || dstNode == null) {
+                System.out.println("Source or destination node does not exist.");
+                return;
+            }
+
+            // Check if the edge already exists
+            boolean exists = graph.edges().stream().anyMatch(edge ->
+                    edge.from().name().toString().equals(srcLabel) &&
+                            edge.to().name().toString().equals(dstLabel)
+            );
+
+            if (exists) {
+                throw new DuplicateEdgeException("Edge from " + srcLabel + " to " + dstLabel + " already exists.");
+            } else {
+                srcNode.addLink(dstNode);
+                System.out.println("Edge from " + srcLabel + " to " + dstLabel + " added successfully.");
+            }
+        } else {
+            System.out.println("Graph is not initialized.");
+        }
+    }
+
     // Save the graph to a DOT file
     public void outputGraph(String filepath) throws IOException {
         if (graph != null) {
@@ -98,7 +143,7 @@ public class GraphParser {
             Scanner scanner = new Scanner(System.in);
             String response;
 
-            // Keep asking the user if they want to add nodes until they say "no"
+            // Keep asking the user if they want to add nodes or edges until they say "no"
             do {
                 System.out.println("Do you want to add nodes? (yes/no)");
                 response = scanner.nextLine().toLowerCase();
@@ -107,6 +152,23 @@ public class GraphParser {
                     System.out.println("Enter node labels separated by spaces:");
                     String[] nodes = scanner.nextLine().split(" ");
                     parser.addNodes(nodes);
+                }
+
+                System.out.println("Do you want to add an edge? (yes/no)");
+                response = scanner.nextLine().toLowerCase();
+
+                if (response.equals("yes")) {
+                    System.out.println("Enter the source and destination node labels (format: src dst):");
+                    String[] edge = scanner.nextLine().split(" ");
+                    if (edge.length == 2) {
+                        try {
+                            parser.addEdge(edge[0], edge[1]);
+                        } catch (DuplicateEdgeException e) {
+                            System.out.println(e.getMessage());
+                        }
+                    } else {
+                        System.out.println("Invalid input. Please enter two node labels.");
+                    }
                 }
 
                 // After adding, print the graph details
@@ -122,5 +184,4 @@ public class GraphParser {
             e.printStackTrace();
         }
     }
-
 }
