@@ -133,6 +133,32 @@ public class GraphParser {
         }
     }
 
+    // junit task
+    public String getGraphDetails() {
+        StringBuilder details = new StringBuilder();
+        if (graph != null) {
+            details.append("Number of nodes: ").append(graph.nodes().size()).append("\n");
+            graph.nodes().forEach(node -> details.append("Node label: ").append(node.name()).append("\n"));
+            details.append("Number of edges: ").append(graph.edges().size()).append("\n");
+            graph.edges().forEach(edge -> details.append("Edge from ").append(edge.from().name())
+                    .append(" to ").append(edge.to().name()).append("\n"));
+        } else {
+            details.append("Graph is not initialized.");
+        }
+        return details.toString();
+    }
+
+
+    public int getNodeCount() {
+        if (graph != null) {
+            return graph.nodes().size();
+        } else {
+            return 0;
+        }
+    }
+
+
+
     public static void main(String[] args) {
         GraphParser parser = new GraphParser();
         try {
