@@ -152,39 +152,6 @@ public class GraphParserTest {
     }
 
 
-//    @Test
-//    public void testRemoveEdges() throws Exception {
-//        // Step 1: Parse and set up initial graph with nodes and edges
-//        parser.parseGraph("src/main/resources/input.dot");
-//        parser.addNode("U1");
-//        parser.addNode("U2");
-//        parser.addNode("U3");
-//        parser.addEdge("U1", "U2");
-//        parser.addEdge("U2", "U3");
-//
-//        // Scenario 1: Successfully remove existing nodes and edges
-//        parser.removeEdge("U1", "U2");
-//        assertEquals(4, parser.getEdgeCount(), "Edge count should be 1 after removing one edge.");
-//        parser.removeNode("U1");
-//        assertEquals(5, parser.getNodeCount(), "Node count should be 2 after removing one node.");
-//
-//        // Scenario 2: Attempt to remove a non-existent node
-//        Exception nodeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-//            parser.removeNode("NonExistentNode");
-//        });
-//        assertTrue(nodeException.getMessage().contains("does not exist"), "Should throw exception for non-existent node.");
-//
-//        // Scenario 3: Attempt to remove a non-existent edge
-//        Exception edgeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-//            parser.removeEdge("U1", "U3");
-//        });
-//        assertTrue(edgeException.getMessage().contains("does not exist"), "Should throw exception for non-existent edge.");
-//
-//        // Scenario 1 (continued): Successfully remove multiple nodes, including an existing and non-existent node
-//        parser.removeNodes(new String[]{"U2", "NonExistentNode"});
-//        assertEquals(1, parser.getNodeCount(), "Only existing nodes should be removed.");
-//    }
-
     @Test
     public void testRemoveEdges() throws Exception {
         GraphParser parser = new GraphParser();
@@ -227,9 +194,46 @@ public class GraphParserTest {
     }
 
 
+    @Test
+    public void testGraphSearch() throws Exception {
+        // Step 1: Parse and set up initial graph with nodes and edges
+        parser.parseGraph("src/main/resources/input.dot");
 
+        // Add additional nodes and edges to form a path and isolated nodes
+        parser.addNode("A");
+        parser.addNode("B");
+        parser.addNode("C");
+        parser.addNode("D");
+        parser.addNode("E");
+        parser.addEdge("A", "B");
+        parser.addEdge("B", "C");
+        parser.addEdge("C", "D");
 
+        // Scenario 1: Path exists from A to D
+        Path path = parser.GraphSearch("A", "D");
+        assertNotNull(path, "Path from A to D should exist");
+        assertEquals("A -> B -> C -> D", path.toString(), "Expected path A -> B -> C -> D");
 
+        // Scenario 2: No path exists from A to E (E is isolated)
+        parser.addNode("Q");  // Add isolated node E without edges
+        path = parser.GraphSearch("A", "Q");
+        assertNull(path, "Path from A to Q should not exist as Q is isolated");
+
+        // Scenario 3: Path does not exist in reverse direction in a directed graph
+        path = parser.GraphSearch("D", "A");
+        assertNull(path, "Path from D to A should not exist in directed graph");
+
+        // Scenario 4: Non-existent nodes should throw NodeNotFoundException
+        Exception exception = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+            parser.GraphSearch("A", "Z");
+        });
+        assertTrue(exception.getMessage().contains("One or both nodes do not exist"), "Exception message should mention non-existent nodes");
+
+        exception = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+            parser.GraphSearch("X", "D");
+        });
+        assertTrue(exception.getMessage().contains("One or both nodes do not exist"), "Exception message should mention non-existent nodes");
+    }
 
 
 
