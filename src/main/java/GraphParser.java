@@ -5,6 +5,8 @@ import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.parse.Parser;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.Node;
+
 
 
 import java.io.File;
@@ -294,7 +296,7 @@ public class GraphParser {
 
 
 // graph search bfs
-public Path GraphSearch(String srcLabel, String dstLabel) throws NodeNotFoundException {
+public Path GraphSearchBFS(String srcLabel, String dstLabel) throws NodeNotFoundException {
     srcLabel = srcLabel;
     dstLabel = dstLabel;
 
@@ -345,6 +347,70 @@ public Path GraphSearch(String srcLabel, String dstLabel) throws NodeNotFoundExc
 }
 
 
+    //  graph search dfs
+    public Path GraphSearchDFS(String srcLabel, String dstLabel) {
+        // Check if both source and destination nodes exist in the graph
+        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
+            System.out.println("One or both nodes do not exist.");
+            return null;
+        }
+
+        // Initialize stack and visited set
+        Stack<List<String>> stack = new Stack<>();
+        Set<String> visited = new HashSet<>();
+
+        // Initialize the path with the source node
+        List<String> initialPath = new ArrayList<>();
+        initialPath.add(srcLabel);
+        stack.push(initialPath);
+
+        // Perform DFS
+        while (!stack.isEmpty()) {
+            List<String> currentPath = stack.pop();
+            String currentNodeLabel = currentPath.get(currentPath.size() - 1);
+
+            System.out.println("Current path: " + currentPath); // Debug
+            System.out.println("Visiting node: " + currentNodeLabel); // Debug
+
+            // Check if the current node is the destination
+            if (currentNodeLabel.equals(dstLabel)) {
+                Path path = new Path();
+                for (String node : currentPath) {
+                    path.addNode(node);
+                }
+                System.out.println("Path found (DFS): " + path);
+                return path;
+            }
+
+            // Mark the node as visited
+            if (!visited.contains(currentNodeLabel)) {
+                visited.add(currentNodeLabel);
+
+                // Retrieve neighbors from adjacencyMap
+                List<String> neighbors = adjacencyMap.getOrDefault(currentNodeLabel, new ArrayList<>());
+                for (String neighbor : neighbors) {
+                    System.out.println("Checking neighbor: " + neighbor); // Debug
+
+                    if (!visited.contains(neighbor)) {
+                        // Create a new path to the neighbor
+                        List<String> newPath = new ArrayList<>(currentPath);
+                        newPath.add(neighbor);
+                        stack.push(newPath);
+                    }
+                }
+            }
+        }
+
+        // No path found
+        System.out.println("No path found from " + srcLabel + " to " + dstLabel);
+        return null;
+    }
+
+
+
+
+
+
 
 
 
@@ -364,8 +430,9 @@ public Path GraphSearch(String srcLabel, String dstLabel) throws NodeNotFoundExc
                 System.out.println("2 - Add Edge");
                 System.out.println("3 - Remove Node");
                 System.out.println("4 - Remove Edge");
-                System.out.println("5 - Find Path Between Nodes (GraphSearch)");
-                System.out.println("6 - Exit");
+                System.out.println("5 - Find Path Between Nodes (BFS)");
+                System.out.println("6 - Find Path Between Nodes (DFS)");
+                System.out.println("7 - Exit");
                 choice = Integer.parseInt(scanner.nextLine());
 
                 switch (choice) {
@@ -392,18 +459,10 @@ public Path GraphSearch(String srcLabel, String dstLabel) throws NodeNotFoundExc
                     case 3: // Remove Node
                         System.out.println("Enter the labels of the nodes to remove, separated by spaces:");
                         String[] nodesToRemove = scanner.nextLine().split(" ");
-                        if (nodesToRemove.length == 1) {
-                            try {
-                                parser.removeNode(nodesToRemove[0]);
-                            } catch (NodeNotFoundException e) {
-                                System.out.println(e.getMessage());
-                            }
-                        } else {
-                            try {
-                                parser.removeNodes(nodesToRemove);
-                            } catch (NodeNotFoundException e) {
-                                System.out.println("Error: " + e.getMessage());
-                            }
+                        try {
+                            parser.removeNodes(nodesToRemove);
+                        } catch (NodeNotFoundException e) {
+                            System.out.println(e.getMessage());
                         }
                         break;
 
@@ -421,44 +480,57 @@ public Path GraphSearch(String srcLabel, String dstLabel) throws NodeNotFoundExc
                         }
                         break;
 
-                    case 5: // Find Path Between Nodes (GraphSearch)
+                    case 5: // Find Path Between Nodes (BFS)
                         System.out.println("Enter the source and destination node labels for path search (format: src dst):");
-                        String[] searchNodes = scanner.nextLine().split(" ");
-                        if (searchNodes.length == 2) {
-                            Path path = parser.GraphSearch(searchNodes[0], searchNodes[1]);
+                        String[] bfsSearchNodes = scanner.nextLine().split(" ");
+                        if (bfsSearchNodes.length == 2) {
+                            Path path = parser.GraphSearchBFS(bfsSearchNodes[0], bfsSearchNodes[1]);
                             if (path != null) {
-                                System.out.println("Path found: " + path);
+                                System.out.println("Path found (BFS): " + path);
                             } else {
-                                System.out.println("No path found from " + searchNodes[0] + " to " + searchNodes[1]);
+                                System.out.println("No path found from " + bfsSearchNodes[0] + " to " + bfsSearchNodes[1]);
                             }
                         } else {
                             System.out.println("Invalid input. Please enter two node labels.");
                         }
                         break;
 
-                    case 6: // Exit
+                    case 6: // Find Path Between Nodes (DFS)
+                        System.out.println("Enter the source and destination node labels for path search (format: src dst):");
+                        String[] dfsSearchNodes = scanner.nextLine().split(" ");
+                        if (dfsSearchNodes.length == 2) {
+                            Path path = parser.GraphSearchDFS(dfsSearchNodes[0], dfsSearchNodes[1]);
+                            if (path != null) {
+                                System.out.println("Path found (DFS): " + path);
+                            } else {
+                                System.out.println("No path found from " + dfsSearchNodes[0] + " to " + dfsSearchNodes[1]);
+                            }
+                        } else {
+                            System.out.println("Invalid input. Please enter two node labels.");
+                        }
+                        break;
+
+                    case 7: // Exit
                         System.out.println("Exiting...");
                         break;
 
                     default:
-                        System.out.println("Invalid choice. Please enter a number between 1 and 6.");
+                        System.out.println("Invalid choice. Please enter a number between 1 and 7.");
                 }
 
                 // Display the updated graph details after each operation
-                if (choice != 6) {
+                if (choice != 7) {
                     parser.printGraphDetails();
                 }
 
-            } while (choice != 6);
+            } while (choice != 7);
 
             // Output final graph to a file
             parser.outputGraph("src/main/resources/output.dot");
             parser.outputGraphAsPng("src/main/resources/output.png");
 
-        } catch (IOException e) {
+        } catch (IOException | NodeNotFoundException e) {
             e.printStackTrace();
-        } catch (NodeNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 
