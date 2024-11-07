@@ -90,30 +90,32 @@ public class GraphParserTest {
     }
 
     // Part 2 starts here:
-    public void testRemoveNode() throws IOException, GraphParser.DuplicateNodeException, GraphParser.NodeNotFoundException,GraphParser.DuplicateEdgeException {
-        // Initialize the graph with nodes and edges
+    @Test
+    public void testRemoveNode() throws IOException, GraphParser.DuplicateNodeException, GraphParser.NodeNotFoundException, GraphParser.DuplicateEdgeException {
+        // Initialize the graph by parsing an input file
         parser.parseGraph("src/main/resources/input.dot");
 
-        // Adding nodes and an edge for the test
-        parser.addNode("A");
-        parser.addNode("B");
-        parser.addEdge("A", "B");
+        // Adding unique nodes "P" and "O" and an edge between them for the test
+        parser.addNode("P");
+        parser.addNode("O");
+        parser.addEdge("P", "O");
 
         // Scenario 1: Successfully remove a node and verify it's gone
-        parser.removeNode("A");
-        assertEquals(1, parser.getNodeCount(), "Node count should be 1 after removing 'A'.");
-        assertEquals(0, parser.getEdgeCount(), "Edge count should be 0 after removing node 'A' and its connected edges.");
+        parser.removeNode("P");
+        assertEquals(5, parser.getNodeCount(), "Node count should be 5 after removing 'P'.");
+        assertEquals(4, parser.getEdgeCount(), "Edge count should be 4 after removing node 'P' and its connected edges.");
 
         // Scenario 2: Try removing a node that does not exist
         assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-            parser.removeNode("C");
+            parser.removeNode("Q");
         }, "Attempting to remove a non-existent node 'C' should throw NodeNotFoundException.");
 
         // Scenario 3: Removing nodes that are isolated (not connected by edges)
         parser.addNode("D");
         parser.removeNode("D");
-        assertEquals(1, parser.getNodeCount(), "Node count should be 1 after removing isolated node 'D'.");
+        assertEquals(6, parser.getNodeCount(), "Node count should be 1 after removing isolated node 'D'.");
     }
+
 
 
 

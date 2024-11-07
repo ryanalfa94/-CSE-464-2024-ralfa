@@ -249,7 +249,24 @@ public class GraphParser {
                     }
                 }
 
-                // After adding, print the graph details
+                // Ask if the user wants to remove nodes
+                System.out.println("Do you want to remove nodes? (yes/no)");
+                response = scanner.nextLine().toLowerCase();
+
+                if (response.equals("yes")) {
+                    System.out.println("Enter node labels separated by spaces:");
+                    String[] nodesToRemove = scanner.nextLine().split(" ");
+                    for (String nodeLabel : nodesToRemove) {
+                        try {
+                            parser.removeNode(nodeLabel);
+                            System.out.println("Node " + nodeLabel + " removed successfully.");
+                        } catch (NodeNotFoundException e) {
+                            System.out.println(e.getMessage());
+                        }
+                    }
+                }
+
+                // After adding and removing nodes and edges, print the graph details
                 parser.printGraphDetails();
 
             } while (!response.equals("no"));
@@ -262,4 +279,5 @@ public class GraphParser {
             e.printStackTrace();
         }
     }
+
 }
