@@ -5,12 +5,18 @@ import guru.nidi.graphviz.parse.Parser;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 
+
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class GraphParser {
     private MutableGraph graph;
+    private Map<String, MutableNode> nodeMap = new HashMap<>(); // To store nodes for quick access
+
 
     // Custom exception for duplicate nodes
     public static class DuplicateNodeException extends Exception {
@@ -26,10 +32,18 @@ public class GraphParser {
         }
     }
 
+    //Part 2 - exception for non-existent nodes
+    public static class NodeNotFoundException extends Exception {
+        public NodeNotFoundException(String message) {
+            super(message);
+        }
+    }
+
     // Feature 1: Parses a DOT file and creates a graph
     public void parseGraph(String filepath) throws IOException {
         this.graph = new Parser().read(new File(filepath));
         System.out.println("Graph parsed successfully.");
+        updateNodeMap();
     }
 
     // Output the graph details like number of nodes and edges
@@ -53,6 +67,7 @@ public class GraphParser {
             } else {
                 MutableNode newNode = Factory.mutNode(label);
                 graph.add(newNode);
+                nodeMap.put(label, newNode); // Add to nodeMap
                 System.out.println("Node " + label + " added successfully.");
             }
         } else {
@@ -164,6 +179,38 @@ public class GraphParser {
             return 0;
         }
     }
+
+
+    // Part 2 of the project starts here:
+
+    // populate nodeMap from graph
+    private void updateNodeMap() {
+        nodeMap.clear();
+        graph.nodes().forEach(node -> nodeMap.put(node.name().toString(), node));
+    }
+
+    // remove a node from the graph
+    public void removeNode(String label) throws NodeNotFoundException {
+        if (graph != null) {
+            MutableNode nodeToRemove = nodeMap.get(label);
+            if (nodeToRemove == null) {
+                throw new NodeNotFoundException("Node " + label + " does not exist.");
+            }
+
+            // Remove edges connected to this node
+            graph.edges().removeIf(edge -> edge.from().name().toString().equals(label) || edge.to().name().toString().equals(label));
+
+            // Remove the node itself
+            graph.nodes().remove(nodeToRemove);
+            nodeMap.remove(label); // Update the nodeMap
+
+            System.out.println("Node " + label + " removed successfully.");
+        } else {
+            System.out.println("Graph is not initialized.");
+        }
+    }
+
+
 
     public static void main(String[] args) {
         GraphParser parser = new GraphParser();
