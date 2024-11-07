@@ -217,14 +217,34 @@ public class GraphParser {
 
 
     // Method to remove multiple nodes
-    public void removeNodes(String[] labels) {
+//    public void removeNodes(String[] labels) {
+//        for (String label : labels) {
+//            try {
+//                removeNode(label); // Attempt to remove each node
+//            } catch (NodeNotFoundException e) {
+//                System.out.println(e.getMessage()); // Print message if node does not exist
+//            }
+//        }
+//    }
+
+    public void removeNodes(String[] labels) throws NodeNotFoundException {
+        StringBuilder missingNodes = new StringBuilder();
+
         for (String label : labels) {
             try {
                 removeNode(label); // Attempt to remove each node
             } catch (NodeNotFoundException e) {
-                System.out.println(e.getMessage()); // Print message if node does not exist
+                missingNodes.append(label).append(" "); // Collect missing nodes
+                System.out.println(e.getMessage()); // Print message for each missing node
             }
         }
+
+        // After attempting all deletions, check if any nodes were missing
+        if (missingNodes.length() > 0) {
+            throw new NodeNotFoundException("The following nodes do not exist: " + missingNodes.toString().trim());
+        }
+
+        System.out.println("All specified nodes removed successfully, if they existed.");
     }
 
 
@@ -282,8 +302,12 @@ public class GraphParser {
                                 System.out.println(e.getMessage());
                             }
                         } else {
+                            try {
                                 // Call removeNodes for multiple nodes
                                 parser.removeNodes(nodesToRemove);
+                            }catch(GraphParser.NodeNotFoundException e){
+                                System.out.println("Error: " + e.getMessage());
+                            }
                         }
                         break;
 
