@@ -8,10 +8,7 @@ import guru.nidi.graphviz.engine.Graphviz;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 
 public class GraphParser {
     private MutableGraph graph;
@@ -189,26 +186,47 @@ public class GraphParser {
         graph.nodes().forEach(node -> nodeMap.put(node.name().toString(), node));
     }
 
-    // remove a node from the graph
+
+
+    // Method to remove a single node
     public void removeNode(String label) throws NodeNotFoundException {
-        if (graph != null) {
-            MutableNode nodeToRemove = nodeMap.get(label);
-            if (nodeToRemove == null) {
-                throw new NodeNotFoundException("Node " + label + " does not exist.");
+        MutableNode nodeToRemove = nodeMap.get(label);
+
+        if (nodeToRemove == null) {
+            throw new NodeNotFoundException("Node " + label + " does not exist.");
+        }
+
+        // Remove all edges connected to the node
+        graph.edges().removeIf(edge -> edge.from().name().toString().equals(label) || edge.to().name().toString().equals(label));
+
+        // Remove the node itself by creating a new set of nodes excluding the removed node
+        MutableGraph updatedGraph = Factory.mutGraph("G").setDirected(true);
+        graph.nodes().forEach(node -> {
+            if (!node.name().equals(nodeToRemove.name())) {
+                updatedGraph.add(node);
             }
+        });
 
-            // Remove edges connected to this node
-            graph.edges().removeIf(edge -> edge.from().name().toString().equals(label) || edge.to().name().toString().equals(label));
+        // Update the graph and nodeMap
+        this.graph = updatedGraph;
+        nodeMap.remove(label);
 
-            // Remove the node itself
-            graph.nodes().remove(nodeToRemove);
-            nodeMap.remove(label); // Update the nodeMap
+        System.out.println("Node " + label + " removed successfully.");
+        updateNodeMap(); // Update node map to reflect the current graph state
+    }
 
-            System.out.println("Node " + label + " removed successfully.");
-        } else {
-            System.out.println("Graph is not initialized.");
+
+    // Method to remove multiple nodes
+    public void removeNodes(String[] labels) {
+        for (String label : labels) {
+            try {
+                removeNode(label); // Attempt to remove each node
+            } catch (NodeNotFoundException e) {
+                System.out.println(e.getMessage()); // Print message if node does not exist
+            }
         }
     }
+
 
 
 
@@ -219,59 +237,72 @@ public class GraphParser {
             parser.printGraphDetails();
 
             Scanner scanner = new Scanner(System.in);
-            String response;
+            int choice;
 
-            // Keep asking the user if they want to add nodes or edges until they say "no"
+            // Loop for user interactions
             do {
-                System.out.println("Do you want to add nodes? (yes/no)");
-                response = scanner.nextLine().toLowerCase();
+                System.out.println("Choose an option:");
+                System.out.println("1 - Add Node");
+                System.out.println("2 - Add Edge");
+                System.out.println("3 - Remove Node");
+                System.out.println("4 - Exit");
+                choice = Integer.parseInt(scanner.nextLine());
 
-                if (response.equals("yes")) {
-                    System.out.println("Enter node labels separated by spaces:");
-                    String[] nodes = scanner.nextLine().split(" ");
-                    parser.addNodes(nodes);
-                }
+                switch (choice) {
+                    case 1: // Add Node
+                        System.out.println("Enter node labels separated by spaces:");
+                        String[] nodes = scanner.nextLine().split(" ");
+                        parser.addNodes(nodes);
+                        break;
 
-                System.out.println("Do you want to add an edge? (yes/no)");
-                response = scanner.nextLine().toLowerCase();
-
-                if (response.equals("yes")) {
-                    System.out.println("Enter the source and destination node labels (format: src dst):");
-                    String[] edge = scanner.nextLine().split(" ");
-                    if (edge.length == 2) {
-                        try {
-                            parser.addEdge(edge[0], edge[1]);
-                        } catch (DuplicateEdgeException e) {
-                            System.out.println(e.getMessage());
+                    case 2: // Add Edge
+                        System.out.println("Enter the source and destination node labels (format: src dst):");
+                        String[] edge = scanner.nextLine().split(" ");
+                        if (edge.length == 2) {
+                            try {
+                                parser.addEdge(edge[0], edge[1]);
+                            } catch (DuplicateEdgeException e) {
+                                System.out.println(e.getMessage());
+                            }
+                        } else {
+                            System.out.println("Invalid input. Please enter two node labels.");
                         }
-                    } else {
-                        System.out.println("Invalid input. Please enter two node labels.");
-                    }
-                }
+                        break;
 
-                // Ask if the user wants to remove nodes
-                System.out.println("Do you want to remove nodes? (yes/no)");
-                response = scanner.nextLine().toLowerCase();
+                    case 3: // Remove Node
+                        System.out.println("Enter the labels of the nodes to remove, separated by spaces:");
+                        String[] nodesToRemove = scanner.nextLine().split(" ");
 
-                if (response.equals("yes")) {
-                    System.out.println("Enter node labels separated by spaces:");
-                    String[] nodesToRemove = scanner.nextLine().split(" ");
-                    for (String nodeLabel : nodesToRemove) {
-                        try {
-                            parser.removeNode(nodeLabel);
-                            System.out.println("Node " + nodeLabel + " removed successfully.");
-                        } catch (NodeNotFoundException e) {
-                            System.out.println(e.getMessage());
+                        // Check if there is one or multiple nodes
+                        if (nodesToRemove.length == 1) {
+                            // Call removeNode for a single node
+                            try {
+                                parser.removeNode(nodesToRemove[0]);
+                            } catch (NodeNotFoundException e) {
+                                System.out.println(e.getMessage());
+                            }
+                        } else {
+                                // Call removeNodes for multiple nodes
+                                parser.removeNodes(nodesToRemove);
                         }
-                    }
+                        break;
+
+                    case 4: // Exit
+                        System.out.println("Exiting...");
+                        break;
+
+                    default:
+                        System.out.println("Invalid choice. Please enter 1, 2, 3, or 4.");
                 }
 
-                // After adding and removing nodes and edges, print the graph details
-                parser.printGraphDetails();
+                // Display the updated graph details after each operation
+                if (choice != 4) {
+                    parser.printGraphDetails();
+                }
 
-            } while (!response.equals("no"));
+            } while (choice != 4);
 
-            // Replace with your actual output path
+            // Output final graph to a file
             parser.outputGraph("src/main/resources/output.dot");
             parser.outputGraphAsPng("src/main/resources/output.png");
 
@@ -279,5 +310,5 @@ public class GraphParser {
             e.printStackTrace();
         }
     }
-
 }
+
