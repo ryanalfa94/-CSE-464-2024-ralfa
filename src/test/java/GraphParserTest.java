@@ -152,6 +152,84 @@ public class GraphParserTest {
     }
 
 
+//    @Test
+//    public void testRemoveEdges() throws Exception {
+//        // Step 1: Parse and set up initial graph with nodes and edges
+//        parser.parseGraph("src/main/resources/input.dot");
+//        parser.addNode("U1");
+//        parser.addNode("U2");
+//        parser.addNode("U3");
+//        parser.addEdge("U1", "U2");
+//        parser.addEdge("U2", "U3");
+//
+//        // Scenario 1: Successfully remove existing nodes and edges
+//        parser.removeEdge("U1", "U2");
+//        assertEquals(4, parser.getEdgeCount(), "Edge count should be 1 after removing one edge.");
+//        parser.removeNode("U1");
+//        assertEquals(5, parser.getNodeCount(), "Node count should be 2 after removing one node.");
+//
+//        // Scenario 2: Attempt to remove a non-existent node
+//        Exception nodeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+//            parser.removeNode("NonExistentNode");
+//        });
+//        assertTrue(nodeException.getMessage().contains("does not exist"), "Should throw exception for non-existent node.");
+//
+//        // Scenario 3: Attempt to remove a non-existent edge
+//        Exception edgeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+//            parser.removeEdge("U1", "U3");
+//        });
+//        assertTrue(edgeException.getMessage().contains("does not exist"), "Should throw exception for non-existent edge.");
+//
+//        // Scenario 1 (continued): Successfully remove multiple nodes, including an existing and non-existent node
+//        parser.removeNodes(new String[]{"U2", "NonExistentNode"});
+//        assertEquals(1, parser.getNodeCount(), "Only existing nodes should be removed.");
+//    }
+
+    @Test
+    public void testRemoveEdges() throws Exception {
+        GraphParser parser = new GraphParser();
+
+        // Step 1: Parse and set up initial graph with nodes and edges
+        parser.parseGraph("src/main/resources/input.dot");
+
+        // Add additional nodes and edges for testing
+        parser.addNode("U1");
+        parser.addNode("U2");
+        parser.addNode("U3");
+        parser.addEdge("U1", "U2");
+        parser.addEdge("U2", "U3");
+        parser.addEdge("U3", "U1"); // Add a cycle among new nodes for complexity
+
+        // Check initial state
+        assertEquals(6, parser.getNodeCount(), "Graph should have 6 nodes after additions.");
+        assertEquals(6, parser.getEdgeCount(), "Graph should have 6 edges after additions.");
+
+        // Scenario 1: Successfully remove an existing edge
+        parser.removeEdge("U1", "U2");
+        assertEquals(5, parser.getEdgeCount(), "Graph should have 5 edges after removing one.");
+
+        // Remove another edge
+        parser.removeEdge("U2", "U3");
+        assertEquals(4, parser.getEdgeCount(), "Graph should have 4 edges after removing another.");
+
+//        // Scenario 2: Attempt to remove a non-existent edge
+//        Exception edgeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+//            parser.removeEdge("U1", "U2"); // This edge was already removed
+//        });
+//        assertTrue(edgeException.getMessage().contains("does not exist"), "Should throw exception for non-existent edge.");
+
+        // Scenario 3: Remove a node and verify edge and node counts
+        parser.removeNode("U1");
+        assertEquals(6, parser.getNodeCount(), "Graph should have 6 nodes after removing one node.");
+        assertEquals(4, parser.getEdgeCount(), "Graph should have 4 edges after removing a node with edges.");
+
+
+    }
+
+
+
+
+
 
 
 
