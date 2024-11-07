@@ -1,0 +1,9 @@
+# Ignore target directory
+target/
+
+# Ignore generated resources
+src/main/resources/*.dot
+src/main/resources/*.png
+
+# Ignore IDE-specific files
+.idea/
