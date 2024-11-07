@@ -1,4 +1,5 @@
 import guru.nidi.graphviz.model.Factory;
+import guru.nidi.graphviz.model.LinkTarget;
 import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.parse.Parser;
@@ -217,15 +218,83 @@ public class GraphParser {
 
 
     // Method to remove multiple nodes
-    public void removeNodes(String[] labels) {
+    public void removeNodes(String[] labels) throws NodeNotFoundException {
+        StringBuilder missingNodes = new StringBuilder();
+
         for (String label : labels) {
             try {
                 removeNode(label); // Attempt to remove each node
             } catch (NodeNotFoundException e) {
-                System.out.println(e.getMessage()); // Print message if node does not exist
+                missingNodes.append(label).append(" "); // Collect missing nodes
+                System.out.println(e.getMessage()); // Print message for each missing node
             }
         }
+
+        // After attempting all deletions, check if any nodes were missing
+        if (missingNodes.length() > 0) {
+            throw new NodeNotFoundException("The following nodes do not exist: " + missingNodes.toString().trim());
+        }
+
+        System.out.println("All specified nodes removed successfully, if they existed.");
     }
+
+
+
+
+
+
+    // Method to remove an edge
+    public void removeEdge(String srcLabel, String dstLabel) throws NodeNotFoundException {
+        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
+            throw new NodeNotFoundException("One or both nodes do not exist: " + srcLabel + ", " + dstLabel);
+        }
+
+        // Create a new graph object to ensure all edges are properly reset
+        MutableGraph updatedGraph = Factory.mutGraph("G").setDirected(true);
+        Map<String, MutableNode> updatedNodeMap = new HashMap<>();
+
+        // Re-create all nodes in the updated graph and map
+        for (String label : nodeMap.keySet()) {
+            MutableNode newNode = Factory.mutNode(label);
+            updatedGraph.add(newNode);
+            updatedNodeMap.put(label, newNode);
+        }
+
+        // Re-add links, excluding the specified edge from srcLabel to dstLabel
+        for (Map.Entry<String, MutableNode> entry : nodeMap.entrySet()) {
+            String nodeName = entry.getKey();
+            MutableNode node = entry.getValue();
+            MutableNode updatedNode = updatedNodeMap.get(nodeName);
+
+            node.links().forEach(link -> {
+                String targetName = link.to().name().toString();
+                if (!(nodeName.equals(srcLabel) && targetName.equals(dstLabel))) {
+                    MutableNode targetNode = updatedNodeMap.get(targetName);
+                    if (targetNode != null) {
+                        updatedNode.addLink(targetNode);
+                    }
+                }
+            });
+        }
+
+        // Replace the main graph and node map
+        this.graph = updatedGraph;
+        this.nodeMap = updatedNodeMap;
+
+        System.out.println("Edge from " + srcLabel + " to " + dstLabel + " removed successfully.");
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -245,7 +314,8 @@ public class GraphParser {
                 System.out.println("1 - Add Node");
                 System.out.println("2 - Add Edge");
                 System.out.println("3 - Remove Node");
-                System.out.println("4 - Exit");
+                System.out.println("4 - Remove Edge");
+                System.out.println("5 - Exit");
                 choice = Integer.parseInt(scanner.nextLine());
 
                 switch (choice) {
@@ -282,25 +352,43 @@ public class GraphParser {
                                 System.out.println(e.getMessage());
                             }
                         } else {
+                            try {
                                 // Call removeNodes for multiple nodes
                                 parser.removeNodes(nodesToRemove);
+                            } catch (NodeNotFoundException e) {
+                                System.out.println("Error: " + e.getMessage());
+                            }
                         }
                         break;
 
-                    case 4: // Exit
+                    case 4: // Remove Edge
+                        System.out.println("Enter the source and destination node labels for the edge to remove (format: src dst):");
+                        String[] edgeToRemove = scanner.nextLine().split(" ");
+                        if (edgeToRemove.length == 2) {
+                            try {
+                                parser.removeEdge(edgeToRemove[0], edgeToRemove[1]);
+                            } catch (NodeNotFoundException e) {
+                                System.out.println(e.getMessage());
+                            }
+                        } else {
+                            System.out.println("Invalid input. Please enter two node labels.");
+                        }
+                        break;
+
+                    case 5: // Exit
                         System.out.println("Exiting...");
                         break;
 
                     default:
-                        System.out.println("Invalid choice. Please enter 1, 2, 3, or 4.");
+                        System.out.println("Invalid choice. Please enter 1, 2, 3, 4, or 5.");
                 }
 
                 // Display the updated graph details after each operation
-                if (choice != 4) {
+                if (choice != 5) {
                     parser.printGraphDetails();
                 }
 
-            } while (choice != 4);
+            } while (choice != 5);
 
             // Output final graph to a file
             parser.outputGraph("src/main/resources/output.dot");
