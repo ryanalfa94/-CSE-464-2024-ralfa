@@ -1,4 +1,6 @@
 GraphParser.class
-GraphParser$DuplicateNodeException.class
-GraphParser$DuplicateEdgeException.class
 GraphParser$NodeNotFoundException.class
+GraphParser$DuplicateNodeException.class
+Path.class
+GraphParser$DuplicateEdgeException.class
+Algorithm.class

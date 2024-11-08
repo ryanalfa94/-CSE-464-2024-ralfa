@@ -1,8 +1,2 @@
-Number of nodes: 3
-Node label: A
-Node label: C
-Node label: B
-Number of edges: 3
-Edge from C to A
-Edge from B to C
-Edge from A to B
+Number of nodes: 0
+Number of edges: 0
