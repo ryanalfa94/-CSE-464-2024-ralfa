@@ -152,39 +152,6 @@ public class GraphParserTest {
     }
 
 
-//    @Test
-//    public void testRemoveEdges() throws Exception {
-//        // Step 1: Parse and set up initial graph with nodes and edges
-//        parser.parseGraph("src/main/resources/input.dot");
-//        parser.addNode("U1");
-//        parser.addNode("U2");
-//        parser.addNode("U3");
-//        parser.addEdge("U1", "U2");
-//        parser.addEdge("U2", "U3");
-//
-//        // Scenario 1: Successfully remove existing nodes and edges
-//        parser.removeEdge("U1", "U2");
-//        assertEquals(4, parser.getEdgeCount(), "Edge count should be 1 after removing one edge.");
-//        parser.removeNode("U1");
-//        assertEquals(5, parser.getNodeCount(), "Node count should be 2 after removing one node.");
-//
-//        // Scenario 2: Attempt to remove a non-existent node
-//        Exception nodeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-//            parser.removeNode("NonExistentNode");
-//        });
-//        assertTrue(nodeException.getMessage().contains("does not exist"), "Should throw exception for non-existent node.");
-//
-//        // Scenario 3: Attempt to remove a non-existent edge
-//        Exception edgeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-//            parser.removeEdge("U1", "U3");
-//        });
-//        assertTrue(edgeException.getMessage().contains("does not exist"), "Should throw exception for non-existent edge.");
-//
-//        // Scenario 1 (continued): Successfully remove multiple nodes, including an existing and non-existent node
-//        parser.removeNodes(new String[]{"U2", "NonExistentNode"});
-//        assertEquals(1, parser.getNodeCount(), "Only existing nodes should be removed.");
-//    }
-
     @Test
     public void testRemoveEdges() throws Exception {
         GraphParser parser = new GraphParser();
@@ -227,9 +194,98 @@ public class GraphParserTest {
     }
 
 
+    @Test
+    public void testGraphSearchBFS() throws Exception {
+        // Step 1: Parse and set up initial graph with nodes and edges
+        parser.parseGraph("src/main/resources/input.dot");
 
+        // Add additional nodes and edges to form a path and isolated nodes
+        parser.addNode("A");
+        parser.addNode("B");
+        parser.addNode("C");
+        parser.addNode("D");
+        parser.addNode("E");
+        parser.addEdge("A", "B");
+        parser.addEdge("B", "C");
+        parser.addEdge("C", "D");
 
+        // Scenario 1: Path exists from A to D
+        Path path = parser.GraphSearchBFS("A", "D");
+        assertNotNull(path, "Path from A to D should exist");
+        assertEquals("A -> B -> C -> D", path.toString(), "Expected path A -> B -> C -> D");
 
+        // Scenario 2: No path exists from A to E (E is isolated)
+        parser.addNode("Q");  // Add isolated node E without edges
+        path = parser.GraphSearchBFS("A", "Q");
+        assertNull(path, "Path from A to Q should not exist as Q is isolated");
+
+        // Scenario 3: Path does not exist in reverse direction in a directed graph
+        path = parser.GraphSearchBFS("D", "A");
+        assertNull(path, "Path from D to A should not exist in directed graph");
+
+        // Scenario 4: Non-existent nodes should throw NodeNotFoundException
+        Exception exception = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+            parser.GraphSearchBFS("A", "Z");
+        });
+        assertTrue(exception.getMessage().contains("One or both nodes do not exist"), "Exception message should mention non-existent nodes");
+
+        exception = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
+            parser.GraphSearchBFS("X", "D");
+        });
+        assertTrue(exception.getMessage().contains("One or both nodes do not exist"), "Exception message should mention non-existent nodes");
+    }
+
+    @Test
+    public void testGraphSearchDFS() throws GraphParser.DuplicateNodeException, GraphParser.DuplicateEdgeException, IOException {
+        // Ensure the graph is initialized properly
+        parser.parseGraph("src/main/resources/input.dot");
+
+        // Setting up nodes
+        parser.addNode("A");
+        parser.addNode("B");
+        parser.addNode("C");
+        parser.addNode("D");
+        parser.addNode("E");
+        parser.addNode("F");
+
+        // Adding edges based on the corrected structure
+        parser.addEdge("A", "B");
+        parser.addEdge("A", "C");
+        parser.addEdge("B", "D");
+        parser.addEdge("C", "F");
+        parser.addEdge("D", "E");
+        parser.addEdge("F", "E");
+
+        // Scenario 1: Valid DFS path from A to E (should pass)
+        Path pathAE = parser.GraphSearchDFS("A", "E");
+        assertNotNull(pathAE, "Path from A to E should exist.");
+        assertEquals("A -> C -> F -> E", pathAE.toString(), "DFS path from A to E should follow A -> C -> F -> E");
+
+        // Scenario 2: Valid DFS path from B to E (should pass)
+        Path pathBE = parser.GraphSearchDFS("B", "E");
+        assertNotNull(pathBE, "Path from B to E should exist.");
+        assertEquals("B -> D -> E", pathBE.toString(), "DFS path from B to E should follow B -> D -> E");
+
+        // Scenario 3: Direct path from A to B (should pass)
+        Path pathAB = parser.GraphSearchDFS("A", "B");
+        assertNotNull(pathAB, "Path from A to B should exist.");
+        assertEquals("A -> B", pathAB.toString(), "Direct path from A to B should be A -> B");
+
+        // Scenario 4: No path from E to A (should return null)
+        Path pathEA = parser.GraphSearchDFS("E", "A");
+        assertNull(pathEA, "No path should exist from E to A.");
+
+        // Scenario 5: Path from A to F (should pass)
+        Path pathAF = parser.GraphSearchDFS("A", "F");
+        assertNotNull(pathAF, "Path from A to F should exist.");
+        assertEquals("A -> C -> F", pathAF.toString(), "DFS path from A to F should follow A -> C -> F");
+
+        // Scenario 6: No path between isolated nodes (if any were isolated)
+        // Example if you added an isolated node (e.g., "G") not connected to any others:
+        parser.addNode("G");
+        Path pathAG = parser.GraphSearchDFS("A", "G");
+        assertNull(pathAG, "No path should exist from A to G as G is isolated.");
+    }
 
 
 
