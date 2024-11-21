@@ -292,14 +292,20 @@ public class GraphParser {
             throw new NodeNotFoundException("One or both nodes do not exist: " + srcLabel + ", " + dstLabel);
         }
 
-        // Use BFS or DFS based on the algorithm selected
+        GraphTraversal traversal;
+
+        // Dynamically select BFS or DFS
         if (algo == Algorithm.BFS) {
-            return GraphSearchBFS(srcLabel, dstLabel);
+            traversal = new BFSTraversal(adjacencyMap);
         } else if (algo == Algorithm.DFS) {
-            return GraphSearchDFS(srcLabel, dstLabel);
+            traversal = new DFSTraversal(adjacencyMap);
+        } else {
+            throw new IllegalArgumentException("Unsupported algorithm: " + algo);
         }
-        return null;
+
+        return traversal.search(srcLabel, dstLabel); // Perform the traversal
     }
+
 
 
     // graph search bfs
@@ -414,125 +420,10 @@ public class GraphParser {
     }
 
 
-//    public static void main(String[] args) {
-//        GraphParser parser = new GraphParser();
-//        try {
-//            parser.parseGraph("src/main/resources/input.dot");
-//            parser.printGraphDetails();
-//
-//            Scanner scanner = new Scanner(System.in);
-//            int choice;
-//
-//            // Loop for user interactions
-//            do {
-//                System.out.println("Choose an option:");
-//                System.out.println("1 - Add Node");
-//                System.out.println("2 - Add Edge");
-//                System.out.println("3 - Remove Node");
-//                System.out.println("4 - Remove Edge");
-//                System.out.println("5 - Find Path Between Nodes (BFS)");
-//                System.out.println("6 - Find Path Between Nodes (DFS)");
-//                System.out.println("7 - Exit");
-//                choice = Integer.parseInt(scanner.nextLine());
-//
-//                switch (choice) {
-//                    case 1: // Add Node
-//                        System.out.println("Enter node labels separated by spaces:");
-//                        String[] nodes = scanner.nextLine().split(" ");
-//                        parser.addNodes(nodes);
-//                        break;
-//
-//                    case 2: // Add Edge
-//                        System.out.println("Enter the source and destination node labels (format: src dst):");
-//                        String[] edge = scanner.nextLine().split(" ");
-//                        if (edge.length == 2) {
-//                            try {
-//                                parser.addEdge(edge[0], edge[1]);
-//                            } catch (DuplicateEdgeException e) {
-//                                System.out.println(e.getMessage());
-//                            }
-//                        } else {
-//                            System.out.println("Invalid input. Please enter two node labels.");
-//                        }
-//                        break;
-//
-//                    case 3: // Remove Node
-//                        System.out.println("Enter the labels of the nodes to remove, separated by spaces:");
-//                        String[] nodesToRemove = scanner.nextLine().split(" ");
-//                        try {
-//                            parser.removeNodes(nodesToRemove);
-//                        } catch (NodeNotFoundException e) {
-//                            System.out.println(e.getMessage());
-//                        }
-//                        break;
-//
-//                    case 4: // Remove Edge
-//                        System.out.println("Enter the source and destination node labels for the edge to remove (format: src dst):");
-//                        String[] edgeToRemove = scanner.nextLine().split(" ");
-//                        if (edgeToRemove.length == 2) {
-//                            try {
-//                                parser.removeEdge(edgeToRemove[0], edgeToRemove[1]);
-//                            } catch (NodeNotFoundException e) {
-//                                System.out.println(e.getMessage());
-//                            }
-//                        } else {
-//                            System.out.println("Invalid input. Please enter two node labels.");
-//                        }
-//                        break;
-//
-//                    case 5: // Find Path Between Nodes (BFS)
-//                        System.out.println("Enter the source and destination node labels for path search (format: src dst):");
-//                        String[] bfsSearchNodes = scanner.nextLine().split(" ");
-//                        if (bfsSearchNodes.length == 2) {
-//                            Path path = parser.GraphSearchBFS(bfsSearchNodes[0], bfsSearchNodes[1]);
-//                            if (path != null) {
-//                                System.out.println("Path found (BFS): " + path);
-//                            } else {
-//                                System.out.println("No path found from " + bfsSearchNodes[0] + " to " + bfsSearchNodes[1]);
-//                            }
-//                        } else {
-//                            System.out.println("Invalid input. Please enter two node labels.");
-//                        }
-//                        break;
-//
-//                    case 6: // Find Path Between Nodes (DFS)
-//                        System.out.println("Enter the source and destination node labels for path search (format: src dst):");
-//                        String[] dfsSearchNodes = scanner.nextLine().split(" ");
-//                        if (dfsSearchNodes.length == 2) {
-//                            Path path = parser.GraphSearchDFS(dfsSearchNodes[0], dfsSearchNodes[1]);
-//                            if (path != null) {
-//                                System.out.println("Path found (DFS): " + path);
-//                            } else {
-//                                System.out.println("No path found from " + dfsSearchNodes[0] + " to " + dfsSearchNodes[1]);
-//                            }
-//                        } else {
-//                            System.out.println("Invalid input. Please enter two node labels.");
-//                        }
-//                        break;
-//
-//                    case 7: // Exit
-//                        System.out.println("Exiting...");
-//                        break;
-//
-//                    default:
-//                        System.out.println("Invalid choice. Please enter a number between 1 and 7.");
-//                }
-//
-//                // Display the updated graph details after each operation
-//                if (choice != 7) {
-//                    parser.printGraphDetails();
-//                }
-//
-//            } while (choice != 7);
-//
-//            // Output final graph to a file
-//            parser.outputGraph("src/main/resources/output.dot");
-//            parser.outputGraphAsPng("src/main/resources/output.png");
-//
-//        } catch (IOException | NodeNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
+
+    public Map<String, List<String>> getAdjacencyMap() {
+        return adjacencyMap;
+    }
 
 
     public static void main(String[] args) throws DuplicateEdgeException, NodeNotFoundException, IOException {
@@ -596,6 +487,7 @@ public class GraphParser {
                         Algorithm algorithm = (algorithmChoice == 1) ? Algorithm.BFS : Algorithm.DFS;
 
                         try {
+                            // Call GraphSearch using the parser instance
                             Path path = parser.GraphSearch(searchNodes[0], searchNodes[1], algorithm);
                             if (path != null) {
                                 System.out.println("Path found (" + algorithm + "): " + path);
@@ -610,6 +502,8 @@ public class GraphParser {
                     }
                     break;
 
+
+
                 case 6: // Exit
                     System.out.println("Exiting...");
                     break;
@@ -622,11 +516,13 @@ public class GraphParser {
             parser.printGraphDetails();
 
         } while (choice != 6);
-        //            // Output final graph to a file
-            parser.outputGraph("src/main/resources/output.dot");
-            parser.outputGraphAsPng("src/main/resources/output.png");
 
-
+        // Output final graph to a file
+        parser.outputGraph("src/main/resources/output.dot");
+        parser.outputGraphAsPng("src/main/resources/output.png");
     }
+
+
+
 }
 
