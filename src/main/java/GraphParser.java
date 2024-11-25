@@ -287,24 +287,44 @@ public class GraphParser {
 
 
 
-    public Path GraphSearch(String srcLabel, String dstLabel, Algorithm algo) throws NodeNotFoundException {
-        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
-            throw new NodeNotFoundException("One or both nodes do not exist: " + srcLabel + ", " + dstLabel);
+//    public Path GraphSearch(String srcLabel, String dstLabel, Algorithm algo) throws NodeNotFoundException {
+//        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
+//            throw new NodeNotFoundException("One or both nodes do not exist: " + srcLabel + ", " + dstLabel);
+//        }
+//
+//        GraphTraversal traversal;
+//
+//        // Dynamically select BFS or DFS
+//        if (algo == Algorithm.BFS) {
+//            traversal = new BFSTraversal(adjacencyMap);
+//        } else if (algo == Algorithm.DFS) {
+//            traversal = new DFSTraversal(adjacencyMap);
+//        } else {
+//            throw new IllegalArgumentException("Unsupported algorithm: " + algo);
+//        }
+//
+//        return traversal.search(srcLabel, dstLabel); // Perform the traversal
+//    }
+
+    public Path GraphSearch(String src, String dst, Algorithm algo) throws NodeNotFoundException {
+        if (!nodeMap.containsKey(src) || !nodeMap.containsKey(dst)) {
+            throw new NodeNotFoundException("One or both nodes do not exist: " + src + ", " + dst);
         }
 
-        GraphTraversal traversal;
+        GraphSearchStrategy strategy;
 
-        // Dynamically select BFS or DFS
+        // Select the strategy dynamically
         if (algo == Algorithm.BFS) {
-            traversal = new BFSTraversal(adjacencyMap);
+            strategy = new BFSTraversal(adjacencyMap);
         } else if (algo == Algorithm.DFS) {
-            traversal = new DFSTraversal(adjacencyMap);
+            strategy = new DFSTraversal(adjacencyMap);
         } else {
             throw new IllegalArgumentException("Unsupported algorithm: " + algo);
         }
 
-        return traversal.search(srcLabel, dstLabel); // Perform the traversal
+        return strategy.search(src, dst); // Perform the traversal
     }
+
 
 
 
