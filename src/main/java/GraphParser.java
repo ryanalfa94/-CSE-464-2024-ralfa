@@ -1,11 +1,10 @@
 import guru.nidi.graphviz.model.Factory;
-import guru.nidi.graphviz.model.LinkTarget;
 import guru.nidi.graphviz.model.MutableNode;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.parse.Parser;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.Node;
+
 
 
 
@@ -184,13 +183,25 @@ public class GraphParser {
     }
 
 
-    // Part 2 of the project starts here:
-
-    // populate nodeMap from graph
+    // Populate nodeMap and adjacencyMap from graph
     private void updateNodeMap() {
         nodeMap.clear();
+        adjacencyMap.clear();
+
+        // Populate nodeMap
         graph.nodes().forEach(node -> nodeMap.put(node.name().toString(), node));
+
+        // Populate adjacencyMap
+        graph.nodes().forEach(node -> {
+            List<String> neighbors = new ArrayList<>();
+            node.links().forEach(link -> neighbors.add(link.to().name().toString()));
+            adjacencyMap.put(node.name().toString(), neighbors);
+        });
+
+        System.out.println("Node Map: " + nodeMap.keySet());
+        System.out.println("Adjacency Map: " + adjacencyMap);
     }
+
 
 
     // Method to remove a single node
@@ -285,158 +296,22 @@ public class GraphParser {
     }
 
 
-
-
-//    public Path GraphSearch(String srcLabel, String dstLabel, Algorithm algo) throws NodeNotFoundException {
-//        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
-//            throw new NodeNotFoundException("One or both nodes do not exist: " + srcLabel + ", " + dstLabel);
-//        }
-//
-//        GraphTraversal traversal;
-//
-//        // Dynamically select BFS or DFS
-//        if (algo == Algorithm.BFS) {
-//            traversal = new BFSTraversal(adjacencyMap);
-//        } else if (algo == Algorithm.DFS) {
-//            traversal = new DFSTraversal(adjacencyMap);
-//        } else {
-//            throw new IllegalArgumentException("Unsupported algorithm: " + algo);
-//        }
-//
-//        return traversal.search(srcLabel, dstLabel); // Perform the traversal
-//    }
-
     public Path GraphSearch(String src, String dst, Algorithm algo) throws NodeNotFoundException {
-        if (!nodeMap.containsKey(src) || !nodeMap.containsKey(dst)) {
-            throw new NodeNotFoundException("One or both nodes do not exist: " + src + ", " + dst);
-        }
+
 
         GraphSearchStrategy strategy;
 
-        // Select the strategy dynamically
         if (algo == Algorithm.BFS) {
             strategy = new BFSTraversal(adjacencyMap);
         } else if (algo == Algorithm.DFS) {
             strategy = new DFSTraversal(adjacencyMap);
+        } else if (algo == Algorithm.RANDOM_WALK) {
+            strategy = new RandomWalkTraversal(adjacencyMap);
         } else {
-            throw new IllegalArgumentException("Unsupported algorithm: " + algo);
+            throw new IllegalArgumentException("Unsupported algorithm");
         }
 
-        return strategy.search(src, dst); // Perform the traversal
-    }
-
-
-
-
-    // graph search bfs
-    private Path GraphSearchBFS(String srcLabel, String dstLabel) throws NodeNotFoundException {
-        srcLabel = srcLabel;
-        dstLabel = dstLabel;
-
-        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
-            throw new NodeNotFoundException("One or both nodes do not exist: " + srcLabel + ", " + dstLabel);
-        }
-
-        Queue<List<String>> queue = new LinkedList<>();
-        Set<String> visited = new HashSet<>();
-
-        // Start BFS from the source node
-        List<String> startPath = new ArrayList<>();
-        startPath.add(srcLabel);
-        queue.add(startPath);
-        visited.add(srcLabel);
-
-        while (!queue.isEmpty()) {
-            List<String> currentPath = queue.poll();
-            String currentNode = currentPath.get(currentPath.size() - 1);
-
-            System.out.println("Current path: " + currentPath);
-            System.out.println("Visiting node: " + currentNode);
-
-            if (currentNode.equals(dstLabel)) {
-                Path path = new Path();
-                for (String node : currentPath) {
-                    path.addNode(node);
-                }
-                return path; // Return the path if destination is found
-            }
-
-            List<String> neighbors = adjacencyMap.getOrDefault(currentNode, new ArrayList<>());
-            for (String neighbor : neighbors) {
-                System.out.println("Checking neighbor: " + neighbor); // Debugging neighbor
-
-                if (!visited.contains(neighbor)) {
-                    visited.add(neighbor);
-
-                    // Create a new path to the neighbor
-                    List<String> newPath = new ArrayList<>(currentPath);
-                    newPath.add(neighbor);
-                    queue.add(newPath);
-                }
-            }
-        }
-
-        return null; // Return null if no path is found
-    }
-
-
-    //  graph search dfs
-    private Path GraphSearchDFS(String srcLabel, String dstLabel) {
-        // Check if both source and destination nodes exist in the graph
-        if (!nodeMap.containsKey(srcLabel) || !nodeMap.containsKey(dstLabel)) {
-            System.out.println("One or both nodes do not exist.");
-            return null;
-        }
-
-        // Initialize stack and visited set
-        Stack<List<String>> stack = new Stack<>();
-        Set<String> visited = new HashSet<>();
-
-        // Initialize the path with the source node
-        List<String> initialPath = new ArrayList<>();
-        initialPath.add(srcLabel);
-        stack.push(initialPath);
-
-        // Perform DFS
-        while (!stack.isEmpty()) {
-            List<String> currentPath = stack.pop();
-            String currentNodeLabel = currentPath.get(currentPath.size() - 1);
-
-            System.out.println("Current path: " + currentPath); // Debug
-            System.out.println("Visiting node: " + currentNodeLabel); // Debug
-
-            // Check if the current node is the destination
-            if (currentNodeLabel.equals(dstLabel)) {
-                Path path = new Path();
-                for (String node : currentPath) {
-                    path.addNode(node);
-                }
-                System.out.println("Path found (DFS): " + path);
-                return path;
-            }
-
-            // Mark the node as visited
-            if (!visited.contains(currentNodeLabel)) {
-                visited.add(currentNodeLabel);
-
-                // Retrieve neighbors from adjacencyMap
-                List<String> neighbors = adjacencyMap.getOrDefault(currentNodeLabel, new ArrayList<>());
-                for (String neighbor : neighbors) {
-                    System.out.println("Checking neighbor: " + neighbor); // Debug
-
-                    if (!visited.contains(neighbor)) {
-                        // Create a new path to the neighbor
-                        List<String> newPath = new ArrayList<>(currentPath);
-                        newPath.add(neighbor);
-                        stack.push(newPath);
-                    }
-                }
-            }
-        }
-
-        // No path found
-        System.out.println("No path found from " + srcLabel + " to " + dstLabel);
-        return null;
+        return strategy.search(src, dst);
     }
 
 
@@ -444,6 +319,7 @@ public class GraphParser {
     public Map<String, List<String>> getAdjacencyMap() {
         return adjacencyMap;
     }
+
 
 
     public static void main(String[] args) throws DuplicateEdgeException, NodeNotFoundException, IOException {
@@ -502,9 +378,20 @@ public class GraphParser {
                     System.out.println("Enter the source and destination node labels for path search (format: src dst):");
                     String[] searchNodes = scanner.nextLine().split(" ");
                     if (searchNodes.length == 2) {
-                        System.out.println("Select search algorithm: (1 - BFS, 2 - DFS)");
+                        System.out.println("Select search algorithm: (1 - BFS, 2 - DFS, 3 - Random Walk)");
                         int algorithmChoice = Integer.parseInt(scanner.nextLine());
-                        Algorithm algorithm = (algorithmChoice == 1) ? Algorithm.BFS : Algorithm.DFS;
+
+                        Algorithm algorithm;
+                        if (algorithmChoice == 1) {
+                            algorithm = Algorithm.BFS;
+                        } else if (algorithmChoice == 2) {
+                            algorithm = Algorithm.DFS;
+                        } else if (algorithmChoice == 3) {
+                            algorithm = Algorithm.RANDOM_WALK;
+                        } else {
+                            System.out.println("Invalid choice. Defaulting to BFS.");
+                            algorithm = Algorithm.BFS;
+                        }
 
                         try {
                             // Call GraphSearch using the parser instance
@@ -521,8 +408,6 @@ public class GraphParser {
                         System.out.println("Invalid input. Please enter two node labels.");
                     }
                     break;
-
-
 
                 case 6: // Exit
                     System.out.println("Exiting...");
@@ -541,6 +426,7 @@ public class GraphParser {
         parser.outputGraph("src/main/resources/output.dot");
         parser.outputGraphAsPng("src/main/resources/output.png");
     }
+
 
 
 

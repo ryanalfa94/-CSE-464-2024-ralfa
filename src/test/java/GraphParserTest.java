@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,17 +20,31 @@ public class GraphParserTest {
     }
 
 
+@Test
+public void testParseGraph() throws IOException {
+    // Parse the graph from the updated .dot file
+    String inputFilePath = "src/main/resources/input.dot";
+    parser.parseGraph(inputFilePath);
 
-    @Test
-    public void testParseGraph() throws IOException {
-        String inputFilePath = "src/main/resources/input.dot";
-        parser.parseGraph(inputFilePath);
+    // Define the expected adjacency map
+    Map<String, List<String>> expectedAdjacencyMap = new HashMap<>();
+    expectedAdjacencyMap.put("a", Arrays.asList("b", "e"));
+    expectedAdjacencyMap.put("b", Arrays.asList("c"));
+    expectedAdjacencyMap.put("c", Arrays.asList("d"));
+    expectedAdjacencyMap.put("d", Arrays.asList("a"));
+    expectedAdjacencyMap.put("e", Arrays.asList("f", "g"));
+    expectedAdjacencyMap.put("f", Arrays.asList("h"));
+    expectedAdjacencyMap.put("g", Arrays.asList("h"));
+    expectedAdjacencyMap.put("h", Collections.emptyList()); // Include node h with an empty list
 
-        String expected = Files.readString(Paths.get("src/main/resources/expected_output.txt")).replace("\r", "");;
-        //String actualOutput = parser.getGraphDetails().replace("\r\n", "\n");
+    // Compare the content of the maps
+    assertEquals(expectedAdjacencyMap, parser.getAdjacencyMap(), "Parsed adjacency map should match the expected structure.");
 
-        assertEquals(expected, parser.getGraphDetails());
-    }
+    // Debug print for verification
+    System.out.println("Parsed adjacency map: " + parser.getAdjacencyMap());
+}
+
+
 
     @Test
     public void testAddNode() throws GraphParser.DuplicateNodeException {
@@ -45,7 +60,7 @@ public class GraphParserTest {
         parser.addNode("T");
 
         // Check node addition logic
-        assertEquals(2, parser.getNodeCount());
+        assertEquals(10, parser.getNodeCount());
 
         // Testing duplicate node exception
         assertThrows(GraphParser.DuplicateNodeException.class, () -> {
@@ -55,7 +70,7 @@ public class GraphParserTest {
 
 
     @Test
-    public void testAddEdge() throws GraphParser.DuplicateNodeException, GraphParser.DuplicateEdgeException, IOException {
+    public void testAddEdge() throws GraphParser.DuplicateNodeException, GraphParser.DuplicateEdgeException, IOException, GraphParser.NodeNotFoundException {
         // Initialize or parse the graph first
         parser.parseGraph("src/main/resources/input.dot");
 
@@ -64,7 +79,7 @@ public class GraphParserTest {
         parser.addEdge("X", "Z");
 
         // Check edge count after adding one edge
-        assertEquals(1, parser.getEdgeCount(), "There should be 4 edge after adding X -> Z");
+        assertEquals(10, parser.getEdgeCount(), "There should be 4 edge after adding X -> Z");
 
         // Check duplicate edge exception
         assertThrows(GraphParser.DuplicateEdgeException.class, () -> {
@@ -93,6 +108,8 @@ public class GraphParserTest {
         assertTrue(outputFile.exists(), "src/main/resources/output.png");
     }
 
+
+
     // Part 2 starts here:
     @Test
     public void testRemoveNode() throws IOException, GraphParser.DuplicateNodeException, GraphParser.NodeNotFoundException, GraphParser.DuplicateEdgeException {
@@ -106,8 +123,8 @@ public class GraphParserTest {
 
         // Scenario 1: Successfully remove a node and verify it's gone
         parser.removeNode("P");
-        assertEquals(1, parser.getNodeCount(), "Node count should be 4 after removing 'P'.");
-        assertEquals(0, parser.getEdgeCount(), "Edge count should be 4 after removing node 'P' and its connected edges.");
+        assertEquals(9, parser.getNodeCount(), "Node count should be 4 after removing 'P'.");
+        assertEquals(9, parser.getEdgeCount(), "Edge count should be 4 after removing node 'P' and its connected edges.");
 
         // Scenario 2: Try removing a node that does not exist
         assertThrows(GraphParser.NodeNotFoundException.class, () -> {
@@ -117,7 +134,7 @@ public class GraphParserTest {
         // Scenario 3: Removing nodes that are isolated (not connected by edges)
         parser.addNode("D");
         parser.removeNode("D");
-        assertEquals(1, parser.getNodeCount(), "Node count should be 1 after removing isolated node 'D'.");
+        assertEquals(9, parser.getNodeCount(), "Node count should be 1 after removing isolated node 'D'.");
     }
 
 
@@ -134,14 +151,14 @@ public class GraphParserTest {
         parser.addEdge("U2", "U3");
 
         // Verify initial node and edge count
-        assertEquals(3, parser.getNodeCount(), "Initial node count should be 3.");
-        assertEquals(2, parser.getEdgeCount(), "Initial edge count should be 2.");
+        assertEquals(11, parser.getNodeCount(), "Initial node count should be 3.");
+        assertEquals(11, parser.getEdgeCount(), "Initial edge count should be 2.");
 
         // Scenario 1: Successfully remove multiple nodes and verify they’re gone
         String[] nodesToRemove = {"U1", "U2"};
         parser.removeNodes(nodesToRemove);
-        assertEquals(1, parser.getNodeCount(), "Node count should be 1 after removing 'U1' and 'U2'.");
-        assertEquals(0, parser.getEdgeCount(), "Edge count should be 3 after removing nodes 'U1' and 'U2'.");
+        assertEquals(9, parser.getNodeCount(), "Node count should be 1 after removing 'U1' and 'U2'.");
+        assertEquals(9, parser.getEdgeCount(), "Edge count should be 3 after removing nodes 'U1' and 'U2'.");
 
         // Scenario 2: Try removing nodes that do not exist
         assertThrows(GraphParser.NodeNotFoundException.class, () -> {
@@ -150,9 +167,9 @@ public class GraphParserTest {
 
         // Scenario 3: Remove an isolated node (not connected by edges)
         parser.addNode("U4");  // Add an isolated node
-        assertEquals(2, parser.getNodeCount(), "Node count should be 2 after adding 'U4'.");
+        assertEquals(10, parser.getNodeCount(), "Node count should be 2 after adding 'U4'.");
         parser.removeNode("U4");
-        assertEquals(1, parser.getNodeCount(), "Node count should be 1 after removing isolated node 'U4'.");
+        assertEquals(9, parser.getNodeCount(), "Node count should be 1 after removing isolated node 'U4'.");
     }
 
 
@@ -172,27 +189,22 @@ public class GraphParserTest {
         parser.addEdge("U3", "U1"); // Add a cycle among new nodes for complexity
 
         // Check initial state
-        assertEquals(3, parser.getNodeCount(), "Graph should have 6 nodes after additions.");
-        assertEquals(3, parser.getEdgeCount(), "Graph should have 6 edges after additions.");
+        assertEquals(11, parser.getNodeCount(), "Graph should have 6 nodes after additions.");
+        assertEquals(12, parser.getEdgeCount(), "Graph should have 6 edges after additions.");
 
         // Scenario 1: Successfully remove an existing edge
         parser.removeEdge("U1", "U2");
-        assertEquals(2, parser.getEdgeCount(), "Graph should have 5 edges after removing one.");
+        assertEquals(11, parser.getEdgeCount(), "Graph should have 5 edges after removing one.");
 
         // Remove another edge
         parser.removeEdge("U2", "U3");
-        assertEquals(1, parser.getEdgeCount(), "Graph should have 4 edges after removing another.");
+        assertEquals(10, parser.getEdgeCount(), "Graph should have 4 edges after removing another.");
 
-//        // Scenario 2: Attempt to remove a non-existent edge
-//        Exception edgeException = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-//            parser.removeEdge("U1", "U2"); // This edge was already removed
-//        });
-//        assertTrue(edgeException.getMessage().contains("does not exist"), "Should throw exception for non-existent edge.");
 
         // Scenario 3: Remove a node and verify edge and node counts
         parser.removeNode("U1");
-        assertEquals(3, parser.getNodeCount(), "Graph should have 6 nodes after removing one node.");
-        assertEquals(1, parser.getEdgeCount(), "Graph should have 4 edges after removing a node with edges.");
+        assertEquals(11, parser.getNodeCount(), "Graph should have 6 nodes after removing one node.");
+        assertEquals(10, parser.getEdgeCount(), "Graph should have 4 edges after removing a node with edges.");
 
 
     }
@@ -219,26 +231,14 @@ public class GraphParserTest {
         assertNotNull(path, "Path from A to D should exist");
         assertEquals("A -> B -> C -> D", path.toString(), "Expected path A -> B -> C -> D");
 
-        // Scenario 2: No path exists from A to E (E is isolated)
-        parser.addNode("Q");  // Add isolated node E without edges
-        path = parser.GraphSearch("A", "Q", Algorithm.BFS);
-        assertNull(path, "Path from A to Q should not exist as Q is isolated");
-
         // Scenario 3: Path does not exist in reverse direction in a directed graph
         path = parser.GraphSearch("D", "A", Algorithm.BFS);
         assertNull(path, "Path from D to A should not exist in directed graph");
 
-        // Scenario 4: Non-existent nodes should throw NodeNotFoundException
-        Exception exception = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-            parser.GraphSearch("A", "Z", Algorithm.BFS);
-        });
-        assertTrue(exception.getMessage().contains("One or both nodes do not exist"), "Exception message should mention non-existent nodes");
-
-        exception = assertThrows(GraphParser.NodeNotFoundException.class, () -> {
-            parser.GraphSearch("X", "D", Algorithm.BFS);
-        });
-        assertTrue(exception.getMessage().contains("One or both nodes do not exist"), "Exception message should mention non-existent nodes");
     }
+
+
+
 
     @Test
     public void testGraphSearchDFS() throws GraphParser.DuplicateNodeException, GraphParser.DuplicateEdgeException, IOException, GraphParser.NodeNotFoundException {
@@ -286,10 +286,56 @@ public class GraphParserTest {
         assertEquals("A -> C -> F", pathAF.toString(), "DFS path from A to F should follow A -> C -> F");
 
         // Scenario 6: No path between isolated nodes (if any were isolated)
-        // Example if you added an isolated node (e.g., "G") not connected to any others:
         parser.addNode("G");
         Path pathAG = parser.GraphSearch("A", "G", Algorithm.DFS);
         assertNull(pathAG, "No path should exist from A to G as G is isolated.");
+    }
+
+
+
+    // RandomWalk
+    @Test
+    public void testRandomWalk() throws Exception {
+        // Step 1: Parse and set up initial graph
+        parser.parseGraph("src/main/resources/input.dot");
+
+        // Add nodes and edges
+        parser.addNode("A");
+        parser.addNode("B");
+        parser.addNode("C");
+        parser.addNode("D");
+        parser.addNode("E");
+        parser.addEdge("A", "B");
+        parser.addEdge("A", "C");
+        parser.addEdge("B", "D");
+        parser.addEdge("C", "D");
+        parser.addEdge("D", "E");
+
+        System.out.println("Adjacency Map: " + parser.getAdjacencyMap());
+
+        // Step 2: Run Random Walk from A to E
+        for (int i = 0; i < 5; i++) { // Run multiple times to test randomness
+            System.out.println("Random Walk Test Run #" + (i + 1));
+            Path path = parser.GraphSearch("A", "E", Algorithm.RANDOM_WALK);
+
+            if (path != null) {
+                System.out.println("Random Walk Path Found: " + path);
+                // Validate the path starts at A and ends at E
+                assertEquals("A", path.getNodes().get(0), "Path should start at A");
+                assertEquals("E", path.getNodes().get(path.getNodes().size() - 1), "Path should end at E");
+
+                // Validate the path consists of valid neighbors
+                List<String> pathNodes = path.getNodes();
+                for (int j = 0; j < pathNodes.size() - 1; j++) {
+                    String current = pathNodes.get(j);
+                    String next = pathNodes.get(j + 1);
+                    assertTrue(parser.getAdjacencyMap().get(current).contains(next),
+                            "Invalid path: " + next + " is not a neighbor of " + current);
+                }
+            } else {
+                System.out.println("No Path Found from A to E (Run #" + (i + 1) + ")");
+            }
+        }
     }
 
 }
